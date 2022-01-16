@@ -24,7 +24,7 @@ class RedBookUser(object):
 
     def __init__(self, source):
         self.downloader = Downloader()
-        self.conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='pass', db='spider',
+        self.conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='pass', db='spider',
                                     charset='utf8mb4')
         self.cur = self.conn.cursor()
         self.insert_data = dict()

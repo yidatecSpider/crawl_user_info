@@ -7,14 +7,9 @@
 import json
 import re
 from urllib.parse import quote
-
-import pymysql
 import requests
-
 from time import sleep, time
-
 from retry import retry
-
 from common import sign
 from common.downloader import Downloader
 from spiders.redbook_user_info import RedBookUser
@@ -147,7 +142,6 @@ def generate_timestamp():
     sleep(round(random.uniform(1, 2), 1))
     time_stamp = time()
     return round(time_stamp, 3)
-    # return "1631693085.391"
 
 
 def extract_user_list():
@@ -193,7 +187,7 @@ def get_proxy():
 def change_proxy():
     proxy_api = 'http://route.xiongmaodaili.com/xiongmao-web/api/glip?secret=b98b87874128d8387000ea2713835e19&orderNo' \
                 '=GL20201113201434Ln043IBh&count=1&isTxt=0&proxyType=1'
-    proxy_rsp = requests.get(proxy_api,timeout=(10, 10))
+    proxy_rsp = requests.get(proxy_api, timeout=(10, 10))
     rsp_json = json.loads(proxy_rsp.content)
     if rsp_json.get('code') == '0':
         proxy = 'http://' + rsp_json['obj'][0]['ip'] + ':' + str(rsp_json['obj'][0]['port'])
@@ -202,7 +196,6 @@ def change_proxy():
 
 
 def request_query(url):
-    rsp = requests.Response()
     downloader = Downloader()
     x_sign = sign.generate_x_sign(url)
     print("请求api:{}".format('http://www.xiaohongshu.com' + url))
@@ -210,28 +203,16 @@ def request_query(url):
     downloader.headers['x-sign'] = x_sign
     downloader.headers['user-agent'] = random.choice(ua_list)
     downloader.headers['authorization'] = random.choice(auth_list)
-    proxy = get_proxy()
-    # proxy = {}
-    try:
-        rsp = downloader.download('http://www.xiaohongshu.com' + url, 'get', '', proxy)
-        while 500 >= rsp.status_code >= 400 and rsp.status_code != 403:
-            # input('请求失败 请前往小红书小程序校验')
-            print("代理失效,更换代理....")
-            change_proxy()
-            proxy = get_proxy()
-            print("代理更换为{}".format(proxy))
-            try:
-                rsp = downloader.download('http://www.xiaohongshu.com' + url, 'get', '', proxy)
-            except requests.exceptions.ReadTimeout:
-                print("代理失效,更换代理....")
-                change_proxy()
-                proxy = get_proxy()
-                print("代理更换为{}".format(proxy))
-    except requests.exceptions.ReadTimeout:
+    # proxy = get_proxy()
+    proxy = {}
+    rsp = downloader.download('http://www.xiaohongshu.com' + url, 'get', '', proxy)
+    while 502 >= rsp.status_code >= 400 and rsp.status_code != 403 and rsp.status_code != 423:
+        # input('请求失败 请前往小红书小程序校验')
         print("代理失效,更换代理....")
         change_proxy()
         proxy = get_proxy()
         print("代理更换为{}".format(proxy))
+        rsp = downloader.download('http://www.xiaohongshu.com' + url, 'get', '', proxy)
     # sleep(round(random.uniform(2, 4), 1))
     return rsp
 
@@ -282,29 +263,47 @@ def get_note_list(user_id):
     return note_item_list
 
 
-def get_comment(note_id):
+def get_comment(comment_data):
     comment_list = list()
-    # while True:
-    base_api = '/fe_api/burdock/weixin/v2/notes/{}/comments?pageSize=10'.format(note_id)
-    comment_rsp = request_query(base_api)
-    if comment_rsp.status_code == 200:
-        comment_data = json.loads(comment_rsp.content).get('data', None)
-        if comment_data and comment_data.get('comments'):
-            for comment in comment_data.get('comments'):
-                comment_list.append(comment['user'])
-                for sub_comment in comment['subComments']:
-                    comment_list.append(sub_comment['user'])
-    # else:
-    #     break
-    # sleep(round(random.uniform(4, 5), 1))
+    if comment_data and comment_data.get('comments'):
+        for comment in comment_data.get('comments'):
+            comment_list.append(comment['user'])
+            for sub_comment in comment['subComments']:
+                comment_list.append(sub_comment['user'])
     return comment_list
+
+
+def request_comment_api(note_id, end_id=None):
+    if end_id:
+        base_api = '/fe_api/burdock/weixin/v2/notes/{}/comments?pageSize=10&endId={}'.format(note_id, end_id)
+    else:
+        base_api = '/fe_api/burdock/weixin/v2/notes/{}/comments?pageSize=10'.format(note_id)
+    return request_query(base_api)
+
+
+def extract_user_id_from_comment(note_id):
+    rsp = request_comment_api(note_id)
+    comment_data = None
+    user_id_list = list()
+    if rsp.status_code == 200:
+        comment_data = json.loads(rsp.content).get('data', None)
+        user_id_list += get_comment(comment_data)
+
+    while comment_data and len(comment_data.get('comments')) == 10:
+        end_id = comment_data.get('comments')[-1].get('id')
+        comment_data = None
+        rsp = request_comment_api(note_id, end_id)
+        if rsp.status_code == 200:
+            comment_data = json.loads(rsp.content).get('data', None)
+            user_id_list += get_comment(comment_data)
+    return user_id_list
 
 
 def get_note_comment(user_id):
     user_list = list()
     note_list = get_note_list(user_id)
     for note in note_list:
-        user_list += get_comment(note['id'])
+        user_list += extract_user_id_from_comment(note['id'])
     user_list = [user['id'] for user in user_list if user['id'] != user_id]
     return set(user_list)
 
@@ -352,7 +351,7 @@ def search_note_list(query):
 def main():
     user = RedBookUser('KOL')
     user.cur.execute('''select distinct url,id from red_book_user where is_dispatched = '0' 
-    and create_time < '2022-01-08 00:00:00' order by create_time desc limit 1,40000 ''')
+    and create_time < '2022-01-08 00:00:00' limit 1,10000 ''')
     user_urls = user.cur.fetchall()
     for user_url in user_urls:
         uid = user_url[0].replace('https://www.xiaohongshu.com/user/profile/', '')
@@ -367,14 +366,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    # print(get_proxy())
-    # change_proxy()
-    # print(get_proxy())
-    # while True:
-    #     try:
-    #         main()
-    #         # sleep(600)
-    #     except Exception as e:
-    #         print(e)
-    #         continue
-    # main()
