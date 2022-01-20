@@ -12,8 +12,10 @@ from time import sleep, time
 from retry import retry
 from common import sign
 from common.downloader import Downloader
+from common.utils import get_proxy
 from spiders.redbook_user_info import RedBookUser
 import random
+import threading
 
 query_list = [
     '冬奥',
@@ -130,10 +132,13 @@ ua_list = [
     "Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Mobile/12A365 MicroMessenger/5.4.1 NetType/WIF",
     "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/33.0.0.0 Mobile Safari/537.36 MicroMessenger/6.0.0.54_r849063.501 NetType/WIFI"
 ]
-auth_list = ['wxmp.8a2c5425-c9a1-449b-ba81-26e4f15c6836']
+auth_list = [
+    'wxmp.8a2c5425-c9a1-449b-ba81-26e4f15c6836',
+    # 'wxmp.907545e0-6716-40e2-91e5-cd59b7345bd1'
+]
 headers = {
     "content-type": "application/json",
-    "referer": "https://servicewechat.com/wxb296433268a1c654/58/page-frame.html",
+    # "referer": "https://servicewechat.com/wxb296433268a1c654/58/page-frame.html",
 }
 
 
@@ -174,45 +179,30 @@ def extract_user_list():
         raise Exception('拉取列表页失败')
 
 
-def get_proxy():
-    with open('../common/proxy', 'r') as fp:
-        proxy = fp.readline()
-    return {
-        'http': proxy,
-        'https': proxy,
-    }
-
-
-@retry(tries=3)
-def change_proxy():
-    proxy_api = 'http://route.xiongmaodaili.com/xiongmao-web/api/glip?secret=b98b87874128d8387000ea2713835e19&orderNo' \
-                '=GL20201113201434Ln043IBh&count=1&isTxt=0&proxyType=1'
-    proxy_rsp = requests.get(proxy_api, timeout=(10, 10))
-    rsp_json = json.loads(proxy_rsp.content)
-    if rsp_json.get('code') == '0':
-        proxy = 'http://' + rsp_json['obj'][0]['ip'] + ':' + str(rsp_json['obj'][0]['port'])
-        with open('../common/proxy', 'w') as fp:
-            fp.write(proxy)
-
-
-def request_query(url):
+def request_query(url, tries=3):
     downloader = Downloader()
+    proxy, auth = get_proxy()
     x_sign = sign.generate_x_sign(url)
     print("请求api:{}".format('http://www.xiaohongshu.com' + url))
     print("sign:{}".format(x_sign))
+    downloader.headers['Proxy-Authorization'] = auth
     downloader.headers['x-sign'] = x_sign
     downloader.headers['user-agent'] = random.choice(ua_list)
     downloader.headers['authorization'] = random.choice(auth_list)
-    # proxy = get_proxy()
+    proxy = {
+        "http": proxy,
+        "https": proxy
+    }
     proxy = {}
-    rsp = downloader.download('http://www.xiaohongshu.com' + url, 'get', '', proxy)
-    while 502 >= rsp.status_code >= 400 and rsp.status_code != 403 and rsp.status_code != 423:
-        # input('请求失败 请前往小红书小程序校验')
-        print("代理失效,更换代理....")
-        change_proxy()
-        proxy = get_proxy()
-        print("代理更换为{}".format(proxy))
+    try:
         rsp = downloader.download('http://www.xiaohongshu.com' + url, 'get', '', proxy)
+        while rsp.status_code != 200 and rsp.status_code != 403 and rsp.status_code != 423 and tries >= 1:
+            # print(f"程序执行:{time() - start_time}s 被封")
+            rsp = request_query(url, tries - 1)
+    except requests.exceptions.ProxyError:
+        rsp = request_query(url)
+    except requests.exceptions.Timeout:
+        rsp = request_query(url)
     # sleep(round(random.uniform(2, 4), 1))
     return rsp
 
@@ -348,10 +338,10 @@ def search_note_list(query):
 #         sleep(round(random.uniform(2, 5), 1))
 #         user.parse(user_id)
 
-def main():
+def main(partition):
     user = RedBookUser('KOL')
-    user.cur.execute('''select distinct url,id from red_book_user where is_dispatched = '0' 
-    and create_time < '2022-01-08 00:00:00' limit 1,10000 ''')
+    user.cur.execute(f'''select distinct url,id from red_book_user partition({partition}) where is_dispatched = '0' 
+    and create_time < '2022-01-08 00:00:00' ''')
     user_urls = user.cur.fetchall()
     for user_url in user_urls:
         uid = user_url[0].replace('https://www.xiaohongshu.com/user/profile/', '')
@@ -365,4 +355,17 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    thread_pool = list()
+    for p in [
+        'p0',
+        'p1', 'p2', 'p3', 'p4'
+    ]:
+        thread_pool.append(threading.Thread(target=main, args=(p,)))
+    print("启动线程")
+    for thread in thread_pool:
+        thread.start()
+    # start_time = time()
+    for thread in thread_pool:
+        thread.join()
+
+    print("执行结束")

@@ -20,7 +20,7 @@ class Downloader(object):
         pass
 
     @retry(tries=3)
-    def download(self, url, method, data=None, proxies=None, timeout=(10, 10)):
+    def download(self, url, method, data=None, proxies=None, timeout=(10, 30)):
         if proxies is None:
             proxies = {}
         if data is None:
@@ -28,4 +28,5 @@ class Downloader(object):
         self.build_request()
         response = requests.request(url=url, method=method, data=data, headers=self.headers, cookies=self.cookies,
                                     proxies=proxies, timeout=timeout)
+        print("状态码:{}".format(response.status_code))
         return response

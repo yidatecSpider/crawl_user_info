@@ -11,6 +11,7 @@ import requests
 
 from common import sign
 from common.downloader import Downloader
+from common.hashlib_get_id import get_raw_video_id
 
 
 class RedBookUser(object):
@@ -72,6 +73,7 @@ class RedBookUser(object):
         json_data = json.loads(res.content).get('data')
         if json_data:
             self.insert_data['id'] = json_data.get('red_id')
+            self.insert_data['hash_code'] = get_raw_video_id(json_data.get('id'))
             self.insert_data['note_count'] = json_data.get('notes')
             self.insert_data['fans_count'] = json_data.get('fans')
             self.insert_data['like_count'] = json_data.get('liked')

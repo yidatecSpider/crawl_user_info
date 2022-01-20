@@ -6,11 +6,13 @@
 # @File    : db.py
 import pymysql
 
+from common.hashlib_get_id import get_raw_video_id
+
 
 class DBHelper:
 
-    def __init__(self, host="127.0.0.1", port=3306, user="root", password="123456",
-                 database="test"):  # 构造函数
+    def __init__(self, host="127.0.0.1", port=3306, user="root", password="pass",
+                 database="spider"):  # 构造函数
         try:
             self.conn = pymysql.connect(host=host, port=port, user=user, password=password, database=database,
                                         charset='utf8')
@@ -91,7 +93,7 @@ class DBHelper:
             self.conn.commit()
             # 影响的行数
             rowcount = self.cursor.rowcount
-        except:
+        except Exception as e:
             # 发生错误时回滚
             self.conn.rollback()
         return rowcount
@@ -115,19 +117,40 @@ class DBHelper:
         return data
 
     # 查所有数据
-    def selectAll(self, **kwargs):
+    def select_all(self, **kwargs):
+        result = list()
         table = kwargs['table']
         field = 'field' in kwargs and kwargs['field'] or '*'
         where = 'where' in kwargs and 'where ' + kwargs['where'] or ''
         order = 'order' in kwargs and 'order by ' + kwargs['order'] or ''
-        sql = 'select %s from %s %s %s ' % (field, table, where, order)
+        limit = 'limit' in kwargs and 'limit ' + kwargs['limit'] or ''
+        sql = 'select %s from %s %s %s %s ' % (field, table, where, order, limit)
         print(sql)
         try:
             # 执行SQL语句
             self.cursor.execute(sql)
             # 使用 fetchone() 方法获取单条数据.
-            data = self.cursor.fetchall()
+            result = self.cursor.fetchall()
         except:
             # 发生错误时回滚
             self.conn.rollback()
-        return data
+        return result
+
+
+if __name__ == '__main__':
+    db = DBHelper()
+    data = db.select_all(table='red_book_user')
+    start = 0
+    batch_num = 1000
+    sql = '''update red_book_user set hash_code = %s where id = %s '''
+    time = len(data) // batch_num + 1 if len(data) % batch_num != 0 else len(data) // batch_num
+    for i in range(time):
+        insert_data = list()
+        for user_info in data[i * batch_num:(i + 1) * batch_num]:
+            uid = user_info[0].replace('https://www.xiaohongshu.com/user/profile/', '')
+            hash_code = get_raw_video_id(uid)
+            insert_data.append([hash_code, user_info[0]])
+        print(insert_data)
+        exec_re = db.cursor.executemany(sql, insert_data)
+        db.conn.commit()
+        pass
