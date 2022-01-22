@@ -8,7 +8,7 @@ import json
 import re
 from urllib.parse import quote
 import requests
-from time import sleep, time
+from time import sleep, time,strftime,localtime
 from retry import retry
 from common import sign
 from common.downloader import Downloader
@@ -183,7 +183,7 @@ def request_query(url, tries=3):
     downloader = Downloader()
     proxy, auth = get_proxy()
     x_sign = sign.generate_x_sign(url)
-    print("请求api:{}".format('http://www.xiaohongshu.com' + url))
+    print(f'[{strftime("%Y-%m-%d %H:%M:%S", localtime())}]请求api:{"http://www.xiaohongshu.com" + url}')
     print("sign:{}".format(x_sign))
     downloader.headers['Proxy-Authorization'] = auth
     downloader.headers['x-sign'] = x_sign

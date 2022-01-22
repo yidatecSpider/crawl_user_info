@@ -5,10 +5,11 @@
 # @Author  : v_shxliu
 # @File    : redbook_user_info.py
 import json
+import threading
 
 import pymysql
 import requests
-
+lock = threading.RLock()
 from common import sign
 from common.downloader import Downloader
 from common.hashlib_get_id import get_raw_video_id
@@ -68,6 +69,12 @@ class RedBookUser(object):
             except pymysql.err.ProgrammingError:
                 print(self.insert_data)
                 print(sql)
+            except pymysql.err.InterfaceError:
+                lock.acquire()
+                self.conn = pymysql.connect(host='localhost', port=3306, user='root', passwd='pass', db='spider',
+                                            charset='utf8mb4')
+                self.cur = self.conn.cursor()
+                lock.release()
 
     def transform(self, res):
         json_data = json.loads(res.content).get('data')
