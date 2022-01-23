@@ -40,7 +40,7 @@ class SinaBasicSpider(Downloader):
             '_2A25Mmm0KDeRhGeRI4lAU8irLwj-IHXVv7tnCrDV8PUNbmtAKLWvjkW9NUpE-ASP2Geeen7lFSNX-u0j81TGsVO6Y'
         ]
 
-    def build_request(self):
+    def build_request(self, url=None):
         self.cookies = {
             'SUB': random.choice(self.cookie_sub_list)
         }

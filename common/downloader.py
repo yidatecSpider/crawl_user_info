@@ -16,7 +16,7 @@ class Downloader(object):
         }
         self.cookies = dict()
 
-    def build_request(self):
+    def build_request(self, url=None):
         pass
 
     @retry(tries=3)
@@ -25,8 +25,7 @@ class Downloader(object):
             proxies = {}
         if data is None:
             data = {}
-        self.build_request()
+        self.build_request(url)
         response = requests.request(url=url, method=method, data=data, headers=self.headers, cookies=self.cookies,
                                     proxies=proxies, timeout=timeout)
-        print("状态码:{}".format(response.status_code))
         return response
