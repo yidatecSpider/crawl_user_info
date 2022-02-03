@@ -144,11 +144,11 @@ class RedBookDownloader(Downloader):
     @staticmethod
     def get_tunnel_proxy():
         # 隧道域名:端口号
-        tunnel = "tps426.kdlapi.com:15818"
+        tunnel = "tps449.kdlapi.com:15818"
 
         # 用户名密码方式
-        username = "t14292125052838"
-        password = "p2hp4urv"
+        username = "t14292872096028"
+        password = "03df6b5z"
         proxies = {
             "http": "http://%(user)s:%(pwd)s@%(proxy)s/" % {"user": username, "pwd": password, "proxy": tunnel},
             "https": "http://%(user)s:%(pwd)s@%(proxy)s/" % {"user": username, "pwd": password, "proxy": tunnel}
@@ -179,14 +179,17 @@ class RedBookDownloader(Downloader):
         self.headers['User-Agent'] = random.choice(ua_list)
         self.headers['authorization'] = random.choice(auth_list)
 
-    def req_download(self, url, tries=5):
+    def req_download(self, url, tries=10):
         proxy = self.get_tunnel_proxy()
+        # proxy = {}
         try:
             rsp = self.download('http://www.xiaohongshu.com' + url, 'get', '', proxy)
             print(f'[{time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}]请求api:{"http://www.xiaohongshu.com" + url}')
             print(f"sign:{self.headers['x-sign']}")
             print(f"状态码:{rsp.status_code}")
             while rsp.status_code != 200 and rsp.status_code != 423 and rsp.status_code != 406:
+                if 500 > rsp.status_code > 400:
+                    print(rsp.text)
                 if rsp.status_code == 502:
                     rsp = self.req_download(url, tries)
                 if rsp.status_code == 403:
@@ -196,7 +199,7 @@ class RedBookDownloader(Downloader):
                             break
                     except JSONDecodeError:
                         rsp = self.req_download(url, tries)
-                if tries <= 3 and rsp.status_code == 461:
+                if tries <= 1 and rsp.status_code == 461:
                     print("账号异常")
                     rsp = self.req_download(url, tries - 1)
                 if tries >= 1:
@@ -207,7 +210,7 @@ class RedBookDownloader(Downloader):
             rsp = self.req_download(url, tries)
         except requests.exceptions.Timeout:
             rsp = self.req_download(url, tries)
-        # sleep(round(random.uniform(2, 4), 1))
+        time.sleep(0.5)
         return rsp
 
 

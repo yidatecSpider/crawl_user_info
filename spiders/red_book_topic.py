@@ -7,12 +7,11 @@
 import json
 import re
 from urllib.parse import quote
-import requests
-from time import sleep, time, strftime, localtime
-from common import sign
+from time import sleep, time
+from common.utils import RedBookDownloader
 from spiders.redbook_user_info import RedBookUser
 import random
-
+downloader = RedBookDownloader('0')
 tag_list = [
     'homefeed.travel_v2',
     'homefeed.mens_fashion_v2',
@@ -39,7 +38,6 @@ tag_list = [
 
 def generate_timestamp():
     print('生成列表页时间戳...')
-    sleep(round(random.uniform(1, 2), 1))
     time_stamp = time()
     return round(time_stamp, 3)
 
@@ -54,15 +52,9 @@ def extract_user_list():
     page = 0
     for api in apis:
         page += 1
-        x_sign = sign.generate_x_sign(api)
-        headers['x-sign'] = x_sign
-        headers['user-agent'] = random.choice(ua_list)
-        headers['authorization'] = random.choice(auth_list)
         print("解析列表第{}页".format(page))
-        sleep(round(random.uniform(1, 10), 1))
-        res = requests.get('http://www.xiaohongshu.com' + api, headers=headers)
+        res = downloader.req_download(api)
         print("请求api:{}".format('http://www.xiaohongshu.com' + api))
-        print("sign:{}".format(x_sign))
         res_obj = json.loads(res.content)
         if res_obj.get('success'):
             user_id_list += set([video.get('user').get('id') for video in res_obj.get('data', [])])
@@ -97,7 +89,7 @@ def extract_user_id(res, search_type):
 
 def search_query(url, search_type):
     user_id_list = list()
-    res = request_query(url)
+    res = downloader.req_download(url)
     ids = extract_user_id(res, search_type)
     if ids:
         user_id_list += ids
@@ -105,8 +97,7 @@ def search_query(url, search_type):
         if total_page > 1:
             urls = [re.sub('page=\\d+', 'page=' + str(page), url) for page in range(1, total_page)]
             for url in urls:
-                sleep(round(random.uniform(4, 5), 1))
-                res = request_query(url)
+                res = downloader.req_download(url)
                 user_id_list += extract_user_id(res, search_type)
     if user_id_list:
         return set(user_id_list)
@@ -129,23 +120,21 @@ def search_note_list(query):
 
 
 def main():
-    user = RedBookUser('KOL')
+    user = RedBookUser('KOL','0')
     user_id_list = extract_user_list()
     for user_id in user_id_list:
-        sleep(round(random.uniform(2, 5), 1))
         user.parse(user_id)
 
 
 if __name__ == '__main__':
-    main()
     # print(get_proxy())
     # change_proxy()
     # print(get_proxy())
-    # while True:
-    #     try:
-    #         main()
-    #         # sleep(600)
-    #     except Exception as e:
-    #         print(e)
-    #         continue
+    while True:
+        try:
+            main()
+            # sleep(600)
+        except Exception as e:
+            print(e)
+            continue
     # main()

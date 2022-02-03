@@ -97,8 +97,8 @@ def main(partition):
 if __name__ == '__main__':
     thread_pool = list()
     for p in [
-        'p0',
-        'p1', 'p2', 'p3', 'p4'
+        'p0','p1','p2'
+        # 'p3', 'p4'
     ]:
         thread_pool.append(threading.Thread(target=main, args=(p,)))
     print("启动线程")

@@ -20,7 +20,7 @@ class Downloader(object):
         pass
 
     @retry(tries=3)
-    def download(self, url, method, data=None, proxies=None, timeout=(10, 30)):
+    def download(self, url, method, data=None, proxies=None, timeout=(10, 2)):
         if proxies is None:
             proxies = {}
         if data is None:
