@@ -120,7 +120,7 @@ def search_note_list(query):
 
 
 def main():
-    user = RedBookUser('KOL','0')
+    user = RedBookUser('Topic','0')
     user_id_list = extract_user_list()
     for user_id in user_id_list:
         user.parse(user_id)

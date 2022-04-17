@@ -144,11 +144,11 @@ class RedBookDownloader(Downloader):
     @staticmethod
     def get_tunnel_proxy():
         # 隧道域名:端口号
-        tunnel = "tps449.kdlapi.com:15818"
+        tunnel = "tps526.kdlapi.com:15818"
 
         # 用户名密码方式
-        username = "t14292872096028"
-        password = "03df6b5z"
+        username = "t14412240697691"
+        password = "i69fhq64"
         proxies = {
             "http": "http://%(user)s:%(pwd)s@%(proxy)s/" % {"user": username, "pwd": password, "proxy": tunnel},
             "https": "http://%(user)s:%(pwd)s@%(proxy)s/" % {"user": username, "pwd": password, "proxy": tunnel}
