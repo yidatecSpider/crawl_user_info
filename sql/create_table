@@ -23,18 +23,18 @@ create table red_book_user
 # 快手用户信息
 create table kuaishou_user_info
 (
-    id            varchar(20)                               not null comment '小红书号',
-    hash_code     bigint unsigned default '0'               null comment '分区标识',
-    note_count    int             default 0                 null comment '笔记数',
-    fans_count    int             default 0                 null comment '粉丝数',
-    like_count    int             default 0                 null comment '点赞数',
-    identity      varchar(100)    default ''                null comment '认证',
-    nickname      varchar(80)                               null comment '昵称',
-    intro         varchar(500)                              null comment '简介',
-    url           varchar(100)    default ''                null comment '用户主页',
-    crawl_source  varchar(100)     default ''                not null comment '抓取来源',
-    create_time   datetime        default CURRENT_TIMESTAMP null comment '创建时间',
-    modify_time   timestamp       default CURRENT_TIMESTAMP null comment '修改时间',
+    id           varchar(20)                               not null comment '小红书号',
+    hash_code    bigint unsigned default '0'               null comment '分区标识',
+    note_count   int             default 0                 null comment '笔记数',
+    fans_count   int             default 0                 null comment '粉丝数',
+    like_count   int             default 0                 null comment '点赞数',
+    identity     varchar(100)    default ''                null comment '认证',
+    nickname     varchar(80)                               null comment '昵称',
+    intro        varchar(500)                              null comment '简介',
+    url          varchar(100)    default ''                null comment '用户主页',
+    crawl_source varchar(100)    default ''                not null comment '抓取来源',
+    create_time  datetime        default CURRENT_TIMESTAMP null comment '创建时间',
+    modify_time  timestamp       default CURRENT_TIMESTAMP null comment '修改时间',
     constraint kuaishou_user_pk
         unique (crawl_source, hash_code)
 )
@@ -54,10 +54,25 @@ create table kwai_user_info
     sex           varchar(2)      default ''                null comment '性别',
     intro         varchar(500)                              null comment '简介',
     url           varchar(100)    default ''                null comment '用户主页',
-    crawl_source  varchar(100)     default ''                not null comment '抓取来源',
+    crawl_source  varchar(100)    default ''                not null comment '抓取来源',
     create_time   datetime        default CURRENT_TIMESTAMP null comment '创建时间',
     modify_time   timestamp       default CURRENT_TIMESTAMP null comment '修改时间',
     constraint kwai_user_pk
         unique (crawl_source, hash_code)
 )
     comment '快手用户信息' partition by hash (`hash_code`) partitions 5;
+
+create table kwai_star_day
+(
+    crawl_date            varchar(10)  default '2022-01-01'                                  not null comment '抓取日期',
+    video_name            varchar(100) default ''                                            null comment '视频标题',
+    user_id               varchar(50)  default ''                                            null comment '视频作者iD',
+    rank_num              int          default 0                                             null comment '榜单名词',
+    rank_name             varchar(20)  default ''                                            null comment '榜单名',
+    total_subscribe_count int          default 0                                             null comment '阅览总数',
+    rank_update_time      datetime     default ''                                            null comment '榜单更新时间',
+    create_time           datetime     default CURRENT_TIMESTAMP                             null comment '创建时间',
+    modify_time           timestamp    default current_timestamp on update current_timestamp null comment '修改时间',
+    constraint kwai_rank_pk
+        unique (crawl_date, rank_num, rank_name)
+) comment '快手星芒日表';

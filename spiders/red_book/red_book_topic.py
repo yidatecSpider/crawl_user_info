@@ -7,9 +7,9 @@
 import json
 import re
 from urllib.parse import quote
-from time import sleep, time
+from time import time
 from common.utils import RedBookDownloader
-from spiders.redbook_user_info import RedBookUser
+from spiders.red_book.redbook_user_info import RedBookUser
 import random
 downloader = RedBookDownloader('0')
 tag_list = [

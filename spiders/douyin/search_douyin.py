@@ -8,7 +8,7 @@ import json
 
 import pymysql
 
-from spiders.run import Sign
+from spiders.douyin.run import Sign
 
 query_list = [
     # '冬奥',

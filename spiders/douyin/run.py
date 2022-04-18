@@ -1,7 +1,7 @@
 import requests
 import execjs
 
-from spiders.get_cookie import get_cookies
+from spiders.douyin.get_cookie import get_cookies
 
 
 class Sign(object):
@@ -9,7 +9,7 @@ class Sign(object):
         self.cookies = get_cookies()
 
     def dy_sign(self, method, kw=None):
-        with open('../js/signature.js', 'r', encoding='utf-8') as f:
+        with open('../../js/signature.js', 'r', encoding='utf-8') as f:
             b = f.read()
         c = execjs.compile(b)
         d = c.call(method, kw)

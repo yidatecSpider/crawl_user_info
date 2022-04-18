@@ -8,7 +8,7 @@ import json
 import threading
 
 from common.utils import RedBookDownloader
-from spiders.redbook_user_info import RedBookUser
+from spiders.red_book.redbook_user_info import RedBookUser
 
 
 class ExtractorComment(RedBookDownloader):

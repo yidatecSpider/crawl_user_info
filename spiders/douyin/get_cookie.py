@@ -19,7 +19,7 @@ class Slide(object):
         :param bg: 带缺口的图片链接或者url
         :param gap: 缺口图片链接或者url
         """
-        self.img_dir = os.path.join(os.getcwd(), 'img')
+        self.img_dir = os.path.join(os.getcwd(), '../img')
         if not os.path.exists(self.img_dir):
             os.makedirs(self.img_dir)
 

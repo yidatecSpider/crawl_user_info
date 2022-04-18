@@ -4,5 +4,5 @@
 # @Time    : 2021/8/20 10:48
 # @Author  : v_shxliu
 # @File    : __init__.py.py
-from . import red_book_topic
-from . import cloud_music_user_id
+from .red_book import red_book_topic
+from .cloud_music import cloud_music_user_id
