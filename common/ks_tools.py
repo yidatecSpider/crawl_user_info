@@ -1,4 +1,4 @@
-
+import json
 import random
 import ctypes
 import requests
@@ -98,17 +98,20 @@ def post_resp(user_id,did='132557A7-C0CA-422D-991F-A02437C1F6F0'):
     url = 'http://api.ksapisrv.com/rest/n/feed/hot?'
     url_str = f'isp=CTCC&pm_tag=&mod=Meizu%28m3%20note%29&lon=113.968423&country_code=cn&kpf=ANDROID_PHONE&did={did}&kpn=KUAISHOU&net=WIFI&app=0&oc=MEIZU&ud=0&hotfix_ver=&c=MEIZU&sys=ANDROID_7.0&appver=6.3.3.8915&ftt=&language=zh-cn&iuid=&lat=22.583945&did_gt=1556199685379&ver=6.3&max_memory=256&type=7&page=1&coldStart=false&count=20&pv=false&id=25&refreshTimes=2&pcursor=&source=1&needInterestTag=false&browseType=1&client_key=3c2cd3f3&os=android'
     # 个人主页
-    url = 'http://api.gifshow.com/rest/n/user/profile/v2?'
+    url = 'http://apijs.gifshow.com/rest/n/tag/unity/feed/hot?'
     url_str = f'isp=CMCC&mod=nubia%28NX511J%29&lon=116.375547&country_code=cn&kpf=ANDROID_PHONE&did={did}&kpn=KUAISHOU&net=WIFI&app=0&oc=XB_GIONE&hotfix_ver=&c=XB_GIONE&sys=ANDROID_5.1.1&appver=6.8.0.10654&ftt=&language=zh-cn&iuid=&lat=40.094897&ver=6.8&max_memory=192'
 
     # 添加登录token
-    token = ''
+    token = '6b47f69fc6f4477c81847c43f28d50bf-2818768537'
     api_client_salt = ''
     param = {
-        'user': str(user_id),
+        'generalTagId': "短剧",
         'pv':'true',
         'client_key':'3c2cd3f3',
         'os':'android',
+        'tagSource':'2',
+        'tagType':'1',
+        'pcursor':'35',
         'token': token
     }
     sign = get_sign(url_str,param)
@@ -122,6 +125,7 @@ def post_resp(user_id,did='132557A7-C0CA-422D-991F-A02437C1F6F0'):
     }
 
     resp = requests.post(url, headers=headers, data=param, verify=False)
+    data = json.loads(resp.content)
     return resp
 
 if __name__ == '__main__':
